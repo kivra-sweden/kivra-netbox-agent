@@ -125,10 +125,10 @@ class VirtualMachine(object):
             #if sorted(set(vm.tags)) != sorted(set(self.tags)):
             #    vm.tags = self.tags
             #    updated += 1
-            if get_device_platform(config.device.platform) is not None:
-                if vm.platform != get_device_platform(config.device.platform).name:
+            if get_device_platform(config) is not None:
+                if vm.platform != get_device_platform(config).name:
                     updated += 1
-                    vm.platform = get_device_platform(config.device.platform).id
+                    vm.platform = get_device_platform(config).id
                     logging.debug('Finished updating Platform!')
 
         if updated:
