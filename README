@@ -1,1 +1,0 @@
-source /opt/netbox-agentvirtend-netbox/bin/activaten and then  sudo python3 -m netbox_agent.cli  -c ../netbox_agent.yml -u
