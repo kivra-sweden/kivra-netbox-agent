@@ -1,0 +1,53 @@
+netbox:
+ url: 'http://netbox.internal.company.com'
+ token: supersecrettoken
+ # uncomment to disable ssl verification
+ # ssl_verify: false
+
+network:
+  ignore_interfaces: "(dummy.*|docker.*)"
+  ignore_ips: (127\.0\.0\..*)
+  # enable auto-cabling
+  lldp: true
+
+#
+# You can use these to change the roles.
+#
+#device:
+# chassis_role: "Server Chassis"
+# blade_role: "Blade"
+# server_role: "Server"
+# tags: server, blade, ,just a comma,delimited,list
+# custom_fields: field1=value1,field2=value2
+#
+#
+# Use this to set the tenant
+#
+#tenant:
+# driver: "file:/tmp/tenant"
+# regex: "(.*)"
+
+datacenter_location:
+ driver: "cmd:cat /etc/qualification | tr [A-Z] [a-z]"
+ regex: "datacenter: (?P<datacenter>[A-Za-z0-9]+)"
+# driver: 'cmd:lldpctl'
+# regex: 'SysName: .*\.([A-Za-z0-9]+)'
+#
+# driver: "file:/tmp/datacenter"
+# regex: "(.*)"
+
+rack_location:
+# driver: 'cmd:lldpctl'
+# match SysName: sw-dist-a1.dc42
+# regex: 'SysName:[ ]+[A-Za-z]+-[A-Za-z]+-([A-Za-z0-9]+)'
+#
+# driver: "file:/tmp/datacenter"
+# regex: "(.*)"
+
+# Some servers dont report the slot, since most people put it in the hostname
+# here's a way to extract it and maintain correct slot location in Netbox
+# slot_location:
+#   driver: 'cmd:hostname'
+#   regex: '.*-(\d+)'
+
+inventory: true
