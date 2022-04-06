@@ -17,10 +17,9 @@ def is_vm(dmi):
        'Xen' in bios[0]['Version'] or \
        'Google Compute Engine' in system[0]['Product Name'] or \
        'RHEV Hypervisor' in system[0]['Product Name'] or \
+       'QEMU' in system[0]['Manufacturer'] or \
        'VirtualBox' in bios[0]['Version'] or \
-       'QEMU' in system[0]['Manufacturer']or \
        'VMware' in system[0]['Manufacturer']:
-        print("ITS is_vm = True")
         return True
     return False
 
@@ -32,23 +31,16 @@ class VirtualMachine(object):
         else:
             self.dmi = dmidecode.parse()
         self.network = None
+        self.device_platform = get_device_platform(config.device.platform)
 
         self.tags = list(set(config.device.tags.split(','))) if config.device.tags else []
-        print(self.tags)
         if self.tags and len(self.tags):
             create_netbox_tags(self.tags)
 
     def get_memory(self):
-#        mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
-#        mem_gib = mem_bytes / (1024.**2)  # e.g. 3.74
-#        return int(mem_gib)
-        mem_cards = os.popen("dmidecode -t memory | awk '( /Size/ && $2 ~ /^[0-9]+$/ )' | awk -F ': ' '{print $2}'").readlines()
-        total_mem = 0
-        for mem_card in mem_cards:
-            total_mem += int(mem_card.split(" ")[0])
-        if mem_cards[0].split(" ")[1] == "GB":
-            total_mem *= 1024
-        return int(total_mem)
+        mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
+        mem_gib = mem_bytes / (1024.**2)  # e.g. 3.74
+        return int(mem_gib)
 
     def get_vcpus(self):
         return os.cpu_count()
@@ -99,12 +91,12 @@ class VirtualMachine(object):
         if not vm:
             logging.debug('Creating Virtual machine..')
             cluster = self.get_netbox_cluster(config.virtual.cluster_name)
-            device_platform = get_device_platform(config)
 
             vm = nb.virtualization.virtual_machines.create(
                 name=hostname,
                 cluster=cluster.id,
-                platform=device_platform.id,
+                platform=self.device_platform,
+                device_platform=self.device_platform,
                 vcpus=vcpus,
                 memory=memory,
                 tenant=tenant.id if tenant else None,
@@ -122,14 +114,12 @@ class VirtualMachine(object):
             if vm.memory != memory:
                 vm.memory = memory
                 updated += 1
-            #if sorted(set(vm.tags)) != sorted(set(self.tags)):
-            #    vm.tags = self.tags
-            #    updated += 1
-            if get_device_platform(config) is not None:
-                if vm.platform != get_device_platform(config).name:
-                    updated += 1
-                    vm.platform = get_device_platform(config).id
-                    logging.debug('Finished updating Platform!')
+            if sorted(set(vm.tags)) != sorted(set(self.tags)):
+                vm.tags = self.tags
+                updated += 1
+            if vm.platform != self.device_platform:
+                vm.platform = self.device_platform
+                updated += 1
 
         if updated:
             vm.save()

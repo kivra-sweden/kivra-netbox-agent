@@ -48,8 +48,6 @@ class SupermicroHost(ServerBase):
     def get_service_tag(self):
         if self.is_blade():
             return self.baseboard[0]['Serial Number'].strip()
-        if self.system[0]['Serial Number'].strip() == "0123456789":
-            return self.baseboard[0]['Serial Number'].strip()
         return self.system[0]['Serial Number'].strip()
 
     def get_product_name(self):
@@ -79,22 +77,3 @@ class SupermicroHost(ServerBase):
         I only know on model of slot GPU extension card that.
         """
         raise NotImplementedError
-
-    def is_expansion_slot(self, server):
-        """
-        Return True if its an extension slot, based on the name
-        """
-        raise NotImplementedError
-
-    def get_blade_expansion_slot(self):
-        """
-        Expansion slot are always the compute bay number + 1
-        """
-        raise NotImplementedError
-
-    def own_expansion_slot(self):
-        """
-        Say if the device can host an extension card based
-        on the product name
-        """
-        pass

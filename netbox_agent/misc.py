@@ -1,10 +1,9 @@
-import socket
-import subprocess
-from shutil import which
-
-from slugify import slugify
-
 from netbox_agent.config import netbox_instance as nb
+from slugify import slugify
+from shutil import which
+import subprocess
+import socket
+import re
 
 
 def is_tool(name):
@@ -29,14 +28,24 @@ def get_device_type(type):
         raise Exception('DeviceType "{}" does not exist, please create it'.format(type))
     return device_type
 
-def get_device_platform(config):
-    device_platform = nb.dcim.platforms.get(
-        name=config.device.platform
-    )
+
+def get_device_platform(device_platform):
+    if device_platform is None:
+        try:
+            import platform
+
+            linux_distribution = " ".join(platform.linux_distribution())
+            if not linux_distribution:
+                return None
+        except (ModuleNotFoundError, NameError):
+            return None
+    else:
+        linux_distribution = device_platform
+
+    device_platform = nb.dcim.platforms.get(name=linux_distribution)
     if device_platform is None:
         device_platform = nb.dcim.platforms.create(
-            name=config.device.platform,
-            slug=slugify(config.device.platform)
+            name=linux_distribution, slug=slugify(linux_distribution)
         )
     return device_platform
 
@@ -84,3 +93,19 @@ def create_netbox_tags(tags):
             )
         ret.append(nb_tag)
     return ret
+
+
+def get_mount_points():
+    mount_points = {}
+    output = subprocess.getoutput('mount')
+    for r in output.split("\n"):
+        if not r.startswith("/dev/"):
+            continue
+        mount_info = r.split()
+        device = mount_info[0]
+        device = re.sub(r'\d+$', '', device)
+        mp = mount_info[2]
+        mount_points.setdefault(device, []).append(mp)
+    return mount_points
+
+
